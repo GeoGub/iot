@@ -1,0 +1,13 @@
+[project]
+name = "telegram"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiogram>=3.18.0",
+    "aiomqtt>=2.1.0",
+    "paho-mqtt==2.0.0",
+    "pydantic-settings>=2.8.1",
+    "redis>=5.2.1",
+]

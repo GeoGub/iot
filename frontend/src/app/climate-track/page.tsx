@@ -35,56 +35,58 @@ interface GraphPoint {
   y: number;
 }
 
-export const options = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top' as const,
-    },
-    title: {
-      display: true,
-      text: 'Temperature Chart with Zoom',
-    },
-    zoom: {
-      pan: {
-        enabled: true,
-        mode: 'x' as 'x', // Исправлено
+export default function Page() {
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Temperature Chart with Zoom',
       },
       zoom: {
-        wheel: {
+        pan: {
           enabled: true,
+          mode: 'x' as 'x',
         },
-        mode: 'x' as 'x', // Исправлено
+        zoom: {
+          wheel: {
+            enabled: true,
+            speed: 0.01,
+          },
+          mode: 'x' as 'x',
+          onZoomComplete: ({chart}) => {
+            const xScale = chart.scales.x;
+            console.log('Зум завершен, текущий диапазон:', xScale.min, '-', xScale.max);
+          }
+        },
       },
-      onZoomComplete: ({chart}) => {
-        console.log(chart)
-      }
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'hour',
+          },
+          ticks: {
+            // Установите интервал, чтобы избежать переполнения временных меток
+            autoSkip: true,
+            maxTicksLimit: 10,  // Ограничьте количество меток
+          },
+        },
+        y: {
+          beginAtZero: false,
+          suggestedMin: 0,  // Подсказка для минимального значения
+          suggestedMax: 50, // Подсказка для максимального значения
+          ticks: {
+            stepSize: 0.5, // Это можно адаптировать в зависимости от данных
+          },
+        },
+      },
     },
-    scales: {
-      x: {
-        type: 'time',
-        time: {
-          unit: 'hour',
-        },
-        ticks: {
-          // Установите интервал, чтобы избежать переполнения временных меток
-          autoSkip: true,
-          maxTicksLimit: 10,  // Ограничьте количество меток
-        },
-      },
-      y: {
-        beginAtZero: false,
-        suggestedMin: 0,  // Подсказка для минимального значения
-        suggestedMax: 50, // Подсказка для максимального значения
-        ticks: {
-          stepSize: 0.5, // Это можно адаптировать в зависимости от данных
-        },
-      },
-    },
-  },
-};
+  };
 
-export default function Page() {
   const chartRef = useRef<ChartJS<'line'> | null>(null);
   const [dataTemperatures, setDataTemperatures] = useState({
     labels: [],
@@ -94,7 +96,6 @@ export default function Page() {
         label: 'Temperature',
         data: [],
         borderColor: 'rgb(53, 162, 235)',
-        // backgroundColor: 'rgba(53, 162, 235, 0.5)',
       },
     ],
   });
