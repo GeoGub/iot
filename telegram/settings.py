@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     MQTT_TOPIC: str = "tasks/controller/topic"
 
     QUEUE_NAME: str = "task_queue"
+    PROCESSED_QUEUE_NAME: str = "processed_tasks"
+
+    PASSWORD: str = "changethis"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

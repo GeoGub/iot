@@ -3,10 +3,16 @@
 #include <DHT.h>
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define DHTTYPE DHT11
 #define DHTPIN D3
-// #define SOUND_SENSOR_PIN A0
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
 
 // WiFi настройки
 const char* ssid = "TP-Link_7D87";
@@ -29,26 +35,55 @@ int lastTemperatureStatusCode;
 int lastHumidityStatusCode;
 int lastSoundStatusCode;
 
+int16_t x, y;
+uint16_t textWidth, textHeight;
+
 WiFiClient espClient;
 HTTPClient http;
 PubSubClient client(espClient);
 DHT dht(DHTPIN, DHTTYPE);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Основные функции
 void setup() {
-    Serial.begin(115200);
-    setup_wifi();
-    client.setServer(server, mqtt_port);
-    client.setCallback(callback);
-    dht.begin();
-    reconnect();
+  Serial.begin(115200);
+  setupWiFi();
+  client.setServer(server, mqtt_port);
+  client.setCallback(callback);
+  dht.begin();
+  mqttConnect();
+
+  Serial.println("Try to show message on display");
+
+  if(display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    display.display(); // Выводим стартовое изображение
+
+    delay(2000); // Пауза 2 секунды
+
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+
+    // String text = "Temperature: 10°C";
+    String text = "Await to get current readings";
+    display.getTextBounds(text, 0, 0, &x, &y, &textWidth, &textHeight);
+
+    // Позиционируем текст по центру
+    int posX = (SCREEN_WIDTH - textWidth) / 2;
+    int posY = (SCREEN_HEIGHT - textHeight) / 2;
+
+    display.setCursor(posX, posY);
+    display.println(text);
+    display.display();  // Обновляем экран
+  }
 }
 
 void loop() {
 
   float temperature = dht.readTemperature();
   float humidity = dht.readHumidity();
-  // int sound_level = analogRead(SOUND_SENSOR_PIN);
+
+  displayCurrentValues(temperature, humidity);
 
   Serial.print("Temperature: ");
   Serial.println(temperature);
@@ -56,18 +91,44 @@ void loop() {
   Serial.print("Humidity: ");
   Serial.println(humidity);
 
-  // Serial.print("Sound level: ");
-  // Serial.println(sound_level);
-
   sendTemperature(temperature);
   sendHumidity(humidity);
-  // sendSoundLevel(sound_level);
 
   customDelay();
 }
 
+void displayCurrentValues(float temperature, float humidity) {
+  String line1 = "Temperature: " + String(temperature) + "°C";
+  String line2 = "Humidity:" + String(humidity) + "%";
+
+  Serial.println(line1);
+  Serial.println(line2);
+
+  Serial.println("Clear display");
+
+  display.clearDisplay();
+
+  // 1 строка
+  display.getTextBounds(line1, 0, 0, &x, &y, &textWidth, &textHeight);
+  int posX1 = 0;
+  int posY1 = (SCREEN_HEIGHT - 2 * textHeight) / 3;
+  display.setCursor(posX1, posY1);
+  display.println(line1);
+
+  // 2 строка
+  display.getTextBounds(line2, 0, 0, &x, &y, &textWidth, &textHeight);
+  int posX2 = 0;
+  int posY2 = posY1 + textHeight + 4;
+  display.setCursor(posX2, posY2);
+  display.println(line2);
+
+  Serial.println("Display lines");
+  // Обновляем изображение
+  display.display();
+}
+
 // Подключение к WiFi
-void setup_wifi() {
+void setupWiFi() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -115,7 +176,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println(response_body);
 }
 
-void reconnect() {
+void mqttConnect() {
   Serial.print("Attempting MQTT connection...");
   if (client.connect("ESP32S3_Client")) {
       Serial.println("Connected!");
@@ -170,33 +231,16 @@ void customDelay() {
   int delay_count = 0;
 
   while (delay_count < DEFAULT_DELAY) {
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+    displayCurrentValues(temperature, humidity);
+
     if (!client.connected()) {
-      reconnect();
-      delay(5000);
-      delay_count += 5000;
+      mqttConnect();
     } else {
       client.loop();
-      delay(1000);
-      delay_count += 1000;
     }
+    delay(1000);
+    delay_count += 1000;
   }
 }
-
-// void sendSoundLevel(int sound_level) {
-//     JsonDocument doc;
-//     char serializedDoc[256];
-
-//     doc["sound_level"] = sound_level;
-//     serializeJson(doc, serializedDoc);
-
-//     http.begin(espClient, "http://192.168.0.111:1234/sound-levels");
-//     http.addHeader("Content-Type", "application/json");
-
-//     lastSoundStatusCode = http.POST(serializedDoc);
-//     String payload = http.getString();
-
-//     Serial.println(lastSoundStatusCode);
-//     Serial.println(payload);
-
-//     http.end();
-// }
