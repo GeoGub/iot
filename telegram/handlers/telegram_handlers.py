@@ -1,32 +1,48 @@
-from aiogram import Router, F, types
-from settings import settings
-import time
 import json
-from services_setup import container
+import time
+
+from aiogram import F, Router, types
 from logger import logger
+from services import Container, RedisSingleton, UserStorage
+from settings import settings
+from dependency_injector.wiring import Provide, inject
 
 router = Router()
 
+
 @router.message(F.text == "/start")
 async def start(message: types.Message):
-    await message.answer("Привет, я бот для управления домом. Чтобы продолжить работу - введи код подтверждения")
-    
+    await message.answer(
+        "Привет, я бот для управления домом. Чтобы продолжить работу - введи код подтверждения"
+    )
+
 
 @router.message(F.text == "/get_temperature")
-async def get_temperature(message: types.Message):
-    if message.from_user.id not in container.users:
-        await message.answer("Вы не зарегистрированы")
-        return
-    container.redis.hset(name=settings.QUEUE_NAME, key=str(time.time()), value=json.dumps({'task': "get_temperature", "user_id": message.from_user.id}))
+@router.message(F.text == "/get_humidity")
+@inject
+async def get_temperature(
+    message: types.Message, redis: RedisSingleton = Provide[Container.redis]
+):
+    # if not user_storage.is_registered(message.from_user.id):
+    #     await message.answer("Вы не зарегистрированы")
+    #     return
+    redis.hset(
+        name=settings.QUEUE_NAME,
+        key=str(time.time()),
+        value=json.dumps({"task": message.text[1:], "user_id": message.from_user.id}),
+    )
     await message.answer("Я вас услышал. Получаю данные...")
 
 
 @router.message(F.text)
-async def register(message: types.Message):
+async def register(
+    message: types.Message,
+    user_storage: UserStorage = Provide[Container.user_storage],
+):
     logger.info("Text received: %s", message.text)
-    if not message.from_user.id in container.users:
+    if not message.from_user.id in user_storage.is_registered(message.from_user.id):
         if message.text == settings.PASSWORD:
-            container.users.append(message.from_user.id)
+            user_storage.register(message.from_user.id)
             await message.answer("Вы зарегистрированы")
             return
         await message.answer("Неправильный пароль")

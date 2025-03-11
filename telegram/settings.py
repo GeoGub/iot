@@ -1,11 +1,13 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Literal
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     ENVIROMENT: Literal["local", "staging", "production"] = "local"
 
-    TOKEN: str
-    IOT_PASSWORD: str # Пароль для бота чтобы его не могли использовать кто-угодно
+    TELEGRAM_BOT_TOKEN: str
+    IOT_PASSWORD: str  # Пароль для бота чтобы его не могли использовать кто-угодно
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379

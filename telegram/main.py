@@ -1,24 +1,76 @@
-import logging
-from settings import settings
-from aiogram import Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
-from handlers.telegram_handlers import router
-from handlers.mqtt_handlers import handle_mqtt_message
 import asyncio
-from services_setup import container, init_services, shutdown_services
-import aiomqtt
+
+from aiogram import Dispatcher
+import handlers
+import handlers.mqtt_handlers
+import handlers.telegram_handlers
 from logger import logger
+from services import (
+    init_services,
+    Container,
+    BotSingleton,
+    RedisSingleton,
+)
+from handlers.mqtt_handlers import handle_mqtt_message
+from dependency_injector.wiring import Provide, inject
+import aiomqtt
+from settings import settings
+import handlers
+import services
+
+
+async def start_mqtt_subscriber():
+    logger.info("Connecting to MQTT broker...")
+    try:
+        async with aiomqtt.Client(settings.MQTT_BROKER) as client:
+            await client.subscribe("result/controller/topic")
+            logger.info("Subscribed to MQTT topics")
+
+            async for message in client.messages:
+                logger.info("Received MQTT message: %s", message.payload)
+                if message:
+                    await handle_mqtt_message(message.payload.decode("utf-8"))
+    except Exception as e:
+        logger.error(f"MQTT connection error: {str(e)}")
+        raise
+
+
+@inject
+async def start_telegram_bot(
+    bot: BotSingleton = Provide[Container.bot],
+    dp: Dispatcher = Provide[Container.dispatcher],
+):
+    try:
+        logger.info("Starting Telegram bot...")
+        dp.include_router(handlers.telegram_handlers.router)
+        await dp.start_polling(bot)
+    except Exception as e:
+        logger.error(f"Telegram bot error: {str(e)}")
+        raise
+
+
+@inject
+async def shutdown_services(
+    redis: RedisSingleton = Provide[Container.redis],
+    bot: BotSingleton = Provide[Container.bot],
+) -> None:
+    """Функция завершения работы сервисов"""
+
+    if redis.initialized:
+        redis.close()
+    if bot.initialized:
+        await bot.close()
+
 
 async def main():
     try:
         logger.info("Starting application initialization...")
         await init_services()
         logger.info("Services initialized successfully")
-        
+
         asyncio.create_task(start_mqtt_subscriber())
         logger.info("MQTT subscriber task created")
-        
+
         await start_telegram_bot()
         logger.info("Telegram bot started successfully")
     except Exception as e:
@@ -28,30 +80,11 @@ async def main():
         logger.info("Shutting down application...")
         await shutdown_services()
 
-async def start_mqtt_subscriber():
-    logger.info("Connecting to MQTT broker...")
-    try:
-        async with aiomqtt.Client("192.168.0.111") as client:
-            await client.subscribe("result/controller/topic")
-            logger.info("Subscribed to MQTT topics")
-            
-            async for message in client.messages:
-                logger.info("Received MQTT message: %s", message.payload)
-                if message:
-                    await handle_mqtt_message(message.payload.decode("utf-8"))
-    except Exception as e:
-        logger.error(f"MQTT connection error: {str(e)}")
-        raise
-
-async def start_telegram_bot():
-    try:
-        logger.info("Starting Telegram bot...")
-        dp = Dispatcher()
-        dp.include_router(router)
-        await dp.start_polling(container.bot)
-    except Exception as e:
-        logger.error(f"Telegram bot error: {str(e)}")
-        raise
 
 if __name__ == "__main__":
+    container = Container()
+    container.init_resources()
+    container.wire(
+        modules=[__name__, handlers.telegram_handlers, handlers.mqtt_handlers, services]
+    )
     asyncio.run(main())
