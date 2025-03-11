@@ -1,14 +1,14 @@
 import time
-from typing import ClassVar, Generic, Optional, TypeVar, Tuple
+from typing import ClassVar, Generic, Optional, Tuple, TypeVar
 
 import redis
 from aiogram import Bot, Dispatcher
-from logger import logger
-from settings import settings
 
 # from handlers.mqtt_handlers import handle_mqtt_message
-from dependency_injector import providers, containers
-from dependency_injector.wiring import inject, Provide
+from dependency_injector import containers, providers
+from dependency_injector.wiring import Provide
+from logger import logger
+from settings import settings
 
 T = TypeVar("T")
 
@@ -152,17 +152,17 @@ async def init_services() -> Tuple[RedisSingleton, BotSingleton, Dispatcher]:
         if not redis:
             try:
                 redis = init_redis()
-            except ConnectionError as e:
+            except ConnectionError:
                 pass
         if not bot:
             try:
                 bot = await init_bot()
-            except ConnectionError as e:
+            except ConnectionError:
                 pass
         if not dispatcher:
             try:
                 dispatcher = init_dispatcher()
-            except ConnectionError as e:
+            except ConnectionError:
                 pass
         if not all((redis, bot, dispatcher)):
             time.sleep(5)

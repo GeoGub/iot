@@ -1,22 +1,21 @@
 import asyncio
 
-from aiogram import Dispatcher
+import aiomqtt
 import handlers
 import handlers.mqtt_handlers
 import handlers.telegram_handlers
+import services
+from aiogram import Dispatcher
+from dependency_injector.wiring import Provide, inject
+from handlers.mqtt_handlers import handle_mqtt_message
 from logger import logger
 from services import (
-    init_services,
-    Container,
     BotSingleton,
+    Container,
     RedisSingleton,
+    init_services,
 )
-from handlers.mqtt_handlers import handle_mqtt_message
-from dependency_injector.wiring import Provide, inject
-import aiomqtt
 from settings import settings
-import handlers
-import services
 
 
 async def start_mqtt_subscriber():

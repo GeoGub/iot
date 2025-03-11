@@ -2,10 +2,10 @@ import json
 import time
 
 from aiogram import F, Router, types
+from dependency_injector.wiring import Provide, inject
 from logger import logger
 from services import Container, RedisSingleton, UserStorage
 from settings import settings
-from dependency_injector.wiring import Provide, inject
 
 router = Router()
 
@@ -13,7 +13,8 @@ router = Router()
 @router.message(F.text == "/start")
 async def start(message: types.Message):
     await message.answer(
-        "Привет, я бот для управления домом. Чтобы продолжить работу - введи код подтверждения"
+        "Привет, я бот для управления домом."
+        "Чтобы продолжить работу - введи код подтверждения"
     )
 
 
@@ -40,7 +41,7 @@ async def register(
     user_storage: UserStorage = Provide[Container.user_storage],
 ):
     logger.info("Text received: %s", message.text)
-    if not message.from_user.id in user_storage.is_registered(message.from_user.id):
+    if message.from_user.id not in user_storage.is_registered(message.from_user.id):
         if message.text == settings.PASSWORD:
             user_storage.register(message.from_user.id)
             await message.answer("Вы зарегистрированы")

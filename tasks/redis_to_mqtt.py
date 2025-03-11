@@ -1,23 +1,27 @@
-import redis
-import time
-import paho.mqtt.client as mqtt
 import json
 import logging
 import signal
 import sys
+import time
+
+import paho.mqtt.client as mqtt
+import redis
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Конфигурация
-REDIS_CONFIG = {'host': '192.168.0.111', 'port': 6379, 'db': 0}
+REDIS_CONFIG = {"host": "192.168.0.111", "port": 6379, "db": 0}
 MQTT_CONFIG = {
-    'host': '192.168.0.111',
-    'port': 1883,
-    'keepalive': 60,
-    'topic': 'tasks/controller/topic'
+    "host": "192.168.0.111",
+    "port": 1883,
+    "keepalive": 60,
+    "topic": "tasks/controller/topic",
 }
+
 
 class TaskProcessor:
     def __init__(self):
@@ -39,7 +43,9 @@ class TaskProcessor:
     def connect_mqtt(self):
         while self.running:
             try:
-                self.mqtt.connect(MQTT_CONFIG['host'], MQTT_CONFIG['port'], MQTT_CONFIG['keepalive'])
+                self.mqtt.connect(
+                    MQTT_CONFIG["host"], MQTT_CONFIG["port"], MQTT_CONFIG["keepalive"]
+                )
                 self.mqtt.loop_start()
                 logger.info("Connected to MQTT broker")
                 return
@@ -56,10 +62,10 @@ class TaskProcessor:
                     if not data:
                         time.sleep(1)
                         break
-                    
+
                     for task_id, value in data.items():
                         self._process_task(task_id, value)
-                    
+
                     if cursor == 0:
                         break
             except redis.RedisError as e:
@@ -69,7 +75,7 @@ class TaskProcessor:
     def _process_task(self, task_id, task_bytes):
         try:
             task = json.loads(task_bytes)
-            self.mqtt.publish(MQTT_CONFIG['topic'], task.get("task"))
+            self.mqtt.publish(MQTT_CONFIG["topic"], task.get("task"))
             self.redis.hdel("task_queue", task_id)
             self.redis.hset("processed_tasks", task_id, task_bytes)
             logger.info(f"Processed task {task_id}")
@@ -78,6 +84,7 @@ class TaskProcessor:
             self.redis.hdel("task_queue", task_id)
         except Exception as e:
             logger.error(f"Failed to process task {task_id}: {e}")
+
 
 if __name__ == "__main__":
     processor = TaskProcessor()

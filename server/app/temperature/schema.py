@@ -5,6 +5,7 @@ from abc import ABC
 from uuid import UUID
 import time
 
+
 class PeriodType(str, Enum):
     days = "days"
     hours = "hours"
@@ -14,12 +15,15 @@ class PeriodType(str, Enum):
 class TemperatureBaseSchema(BaseModel, ABC):
     temperature: float
 
+
 class TemperatureInSchema(TemperatureBaseSchema):
     pass
+
 
 class TemperatureFilterSchema(BaseModel):
     type: PeriodType = PeriodType.days
     start_timestamp: int = Field(default_factory=time.time)
+
 
 class TemperatureFiteredOutSchema(TemperatureBaseSchema):
     day: str
@@ -30,6 +34,7 @@ class TemperatureFiteredOutSchema(TemperatureBaseSchema):
 
     class Config:
         from_attributes = True
+
 
 class TemperatureOutSchema(TemperatureBaseSchema):
     uuid: UUID

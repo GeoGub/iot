@@ -10,7 +10,9 @@ router = APIRouter(prefix="/sound-levels", tags=["sound_level"])
 
 
 @router.post("")
-async def create_sound_level(session: Annotated[AsyncSession, Depends(get_db)], data: dict):
+async def create_sound_level(
+    session: Annotated[AsyncSession, Depends(get_db)], data: dict
+):
     sound_level = SoundLevel.model_validate(data)
     session.add(sound_level)
     await session.commit()

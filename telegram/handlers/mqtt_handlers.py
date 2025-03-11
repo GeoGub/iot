@@ -1,10 +1,10 @@
 import json
-from typing import Any, Dict
+from typing import Dict
 
+from dependency_injector.wiring import Provide, inject
 from logger import logger
-from settings import settings
 from services import BotSingleton, Container, RedisSingleton
-from dependency_injector.wiring import inject, Provide
+from settings import settings
 
 
 async def handle_mqtt_message(message: str) -> None:

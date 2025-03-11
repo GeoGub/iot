@@ -8,9 +8,6 @@ from sqlmodel import SQLModel
 from alembic import context
 from settings import settings
 
-from app.temperature.models import Temperature
-from app.humidity.models import Humidity
-from app.sound_level.models import SoundLevel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
