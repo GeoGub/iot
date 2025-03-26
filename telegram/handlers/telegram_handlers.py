@@ -35,6 +35,19 @@ async def get_temperature(
     await message.answer("Я вас услышал. Получаю данные...")
 
 
+@router.message(F.text == "/switch_display_status")
+@inject
+async def switch_display_status(
+    message: types.Message, redis: RedisSingleton = Provide[Container.redis]
+):
+    redis.hset(
+        name=settings.QUEUE_NAME,
+        key=str(time.time()),
+        value=json.dumps({"task": message.text[1:], "user_id": message.from_user.id}),
+    )
+    await message.answer("Обновляю состояние дисплея...")
+
+
 @router.message(F.text)
 async def register(
     message: types.Message,

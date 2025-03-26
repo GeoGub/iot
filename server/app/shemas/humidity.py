@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from abc import ABC
-from uuid import UUID
+from app.schema import CreatedAtToMsConverter, ClimateFilterSchema
 
 
 class Humidity(BaseModel, ABC):
@@ -11,9 +11,10 @@ class HumidityInSchema(Humidity):
     pass
 
 
-class HumidityOutSchema(Humidity):
-    uuid: UUID
-    created_at_timestamp: int
-
+class HumidityOutSchema(Humidity, CreatedAtToMsConverter):
     class Config:
         from_attributes = True
+
+
+class HumidityFilterSchema(ClimateFilterSchema):
+    pass

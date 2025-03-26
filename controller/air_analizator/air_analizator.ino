@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+// #include <Fonts/FreeSans9pt7b.h>
 
 #define DHTTYPE DHT11
 #define DHTPIN D3
@@ -54,14 +55,17 @@ void setup() {
   mqttConnect();
 
   Serial.println("Try to show message on display");
+  delay(1000);
 
-  if(display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+  if (display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("Display message");
     display.display(); // Выводим стартовое изображение
 
     delay(2000); // Пауза 2 секунды
 
     display.clearDisplay();
-    display.setTextSize(1);
+    // display.setFont(&FreeSans9pt7b);
+    display.setTextSize(2);
     display.setTextColor(SSD1306_WHITE);
 
     // String text = "Temperature: 10°C";
@@ -83,7 +87,7 @@ void loop() {
   float temperature = dht.readTemperature();
   float humidity = dht.readHumidity();
 
-  displayCurrentValues(temperature, humidity);
+  // displayCurrentValues(temperature, humidity);
 
   Serial.print("Temperature: ");
   Serial.println(temperature);
@@ -98,31 +102,35 @@ void loop() {
 }
 
 void displayCurrentValues(float temperature, float humidity) {
-  String line1 = "Temperature: " + String(temperature) + "°C";
-  String line2 = "Humidity:" + String(humidity) + "%";
+  String line1 = "T: " + String(temperature);
+  String line2 = "H: " + String(humidity);
 
   Serial.println(line1);
   Serial.println(line2);
-
-  Serial.println("Clear display");
 
   display.clearDisplay();
 
   // 1 строка
   display.getTextBounds(line1, 0, 0, &x, &y, &textWidth, &textHeight);
   int posX1 = 0;
-  int posY1 = (SCREEN_HEIGHT - 2 * textHeight) / 3;
+  int posY1 = 15;
   display.setCursor(posX1, posY1);
-  display.println(line1);
+  display.print(line1);
+
+  // // Рисуем символ градуса вручную
+  display.drawCircle(display.getCursorX() + 3, 4, 3, SSD1306_WHITE);
+  display.setCursor(display.getCursorX() + 8, posY1);
+  display.println("C");
 
   // 2 строка
   display.getTextBounds(line2, 0, 0, &x, &y, &textWidth, &textHeight);
   int posX2 = 0;
-  int posY2 = posY1 + textHeight + 4;
+  int posY2 = 0 + textHeight + 20;
   display.setCursor(posX2, posY2);
-  display.println(line2);
+  display.print(line2);
+  display.setCursor(display.getCursorX() + 8, posY2);
+  display.println("%");
 
-  Serial.println("Display lines");
   // Обновляем изображение
   display.display();
 }

@@ -8,6 +8,9 @@ from sqlmodel import SQLModel
 from alembic import context
 from settings import settings
 
+from app.models.humidity import Humidity # noqa: F401
+from app.models.temperature import Temperature # noqa: F401
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

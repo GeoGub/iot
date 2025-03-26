@@ -57,8 +57,8 @@ async def shutdown_services(
 
     if redis.initialized:
         redis.close()
-    if bot.initialized:
-        await bot.close()
+    # if bot.initialized:
+    #     await bot.close()
 
 
 async def main():

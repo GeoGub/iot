@@ -8,10 +8,10 @@ import warnings
 class Settings(BaseSettings):
     # ADMINS_TG_IDS: str
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
-    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_SERVER: str = "192.168.0.111"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = ""
+    POSTGRES_PASSWORD: str = "12345678"
     POSTGRES_DB: str = "iot_db"
 
     @computed_field  # type: ignore[prop-decorator]
